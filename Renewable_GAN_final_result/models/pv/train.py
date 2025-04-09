@@ -60,7 +60,8 @@ class Generator(nn.Module):
             nn.Linear(256, 128),
             nn.BatchNorm1d(128),
             nn.LeakyReLU(0.2),
-            nn.Linear(128, 1)
+            nn.Linear(128, 1),
+            nn.Sigmoid()
         )
 
     def forward(self, x, noise):
@@ -77,8 +78,9 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(0.2),
             nn.Linear(256, 128),
             nn.LeakyReLU(0.2),
-            nn.Linear(128, 1)
-        )
+            nn.Linear(128, 1),
+            nn.Sigmoid() 
+       )
 
     def forward(self, x, power):
         x = torch.cat((x, power), dim=1)

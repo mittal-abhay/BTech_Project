@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, TensorDataset
-from train import Generator
+from models.load_model.train import Generator
 from sklearn.metrics import r2_score
 import matplotlib.dates as mdates
 
@@ -95,9 +95,58 @@ def test_model(test_data_path, generator, device, batch_size=32, num_samples=5):
 
         plt.tight_layout()
         plt.savefig(f"test_generated_sample_{i+1}.png", dpi=600)
-        plt.show()
+
 
     return predicted_powers_list, actual_power, mae
+
+
+def test_model_temp(test_data_path, generator, device, batch_size=32):
+    
+    # Load test dataset
+    test_data = pd.read_csv(test_data_path)
+    test_data['date_time'] = pd.to_datetime(test_data['date_time'], format="%Y-%m-%d %H:%M:%S")
+
+    singapore = pd.read_csv("testing_dataset/sing21new.csv")
+    singapore_power = singapore['power'][:len(test_data)]
+
+    # add power to the test_data
+    test_data['power'] = singapore_power
+
+    # Extract features
+    test_features = test_data[['nwp_globalirrad', 'nwp_directirrad', 'nwp_temperature', 
+                              'nwp_humidity', 'nwp_windspeed', 'lmd_totalirrad', 
+                              'lmd_diffuseirrad', 'lmd_temperature', 'lmd_pressure']]
+    test_power = test_data[['power']]
+    
+    # Normalize features and target
+    scaler_features = MinMaxScaler()
+    scaler_power = MinMaxScaler()
+    scaled_test_features = scaler_features.fit_transform(test_features)
+    scaled_test_power = scaler_power.fit_transform(test_power)
+    
+    # Convert to tensors
+    test_features_tensor = torch.tensor(scaled_test_features, dtype=torch.float32)
+    test_power_tensor = torch.tensor(scaled_test_power, dtype=torch.float32)
+    
+    # DataLoader
+    test_dataset = TensorDataset(test_features_tensor, test_power_tensor)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    
+    # Evaluate multiple stochastic outputs
+    generator.eval()
+    predicted_powers_list = []
+
+    with torch.no_grad():
+        predicted_power = []
+        for batch_features, batch_power in test_loader:
+            batch_features = batch_features.to(device)
+            noise = torch.randn(batch_features.size(0), generator.noise_dim, device=device)
+            predictions = generator(batch_features, noise)
+            predicted_power.extend(predictions.cpu().numpy())
+
+    predicted_power = np.array(predicted_power).squeeze() 
+    test_data['predicted_pv'] = predicted_power
+    test_data.to_csv("test_data_with_predicted_pv.csv", index=False)
 
 
 # Usage example
@@ -112,11 +161,12 @@ if __name__ == "__main__":
     generator.load_state_dict(torch.load('generator_wgangp.pth'))
     
     # Test the model
-    test_data_path = "testing_dataset/sing21new.csv"
+    test_data_path = "dataset_with_predicted_load.csv"
     
-    predicted_power, actual_power, mae = test_model(
+    test_model_temp(
         test_data_path=test_data_path,
         generator=generator,
         device=device
     )
+
     
