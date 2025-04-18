@@ -46,12 +46,14 @@ def prepare_data (start, end, latitude, longitude):
         # Add derived features for `lmd_totalirrad` and `lmd_temperature` (for now they are same as nwp, can be changed later)
         df["lmd_totalirrad"] = df["nwp_globalirrad"]
         df["lmd_temperature"] = df["nwp_temperature"]
+        df["date_time"] = df.index
 
         # Resample the data to 30-minute intervals
         df_30min = df.resample("30T").interpolate()
 
         # Round off any decimal values to 4 decimal places
         df_30min = df_30min.round(4)
+
 
         print("Dataset created successfully.")
     else:
