@@ -53,8 +53,7 @@ def prepare_data (start, end, latitude, longitude):
 
         # Round off any decimal values to 4 decimal places
         df_30min = df_30min.round(4)
-
-
+        
         print("Dataset created successfully.")
     else:
         print(f"Failed to fetch data from NASA POWER API. Error code: {response.status_code}. {response.text}")

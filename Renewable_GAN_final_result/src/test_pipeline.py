@@ -10,13 +10,14 @@ latitude = 1.2644
 longitude = 103.8233
 
 # Define the time period
-start = "20210101"  # Format: YYYYMMDD
-end = "20210131"    # Format: YYYYMMDD
+start = "20210801"  # Format: YYYYMMDD
+end = "20211231"    # Format: YYYYMMDD
 
 
 # Prepare the data
 weather_df = prepare_data(start, end, latitude, longitude)
 weather_df.to_csv("prepared_data.csv", index=False)
+
 
 # # Feed into pv_model and add predicted_pv column to the dataframe
 print("Running pv_model...")
@@ -26,13 +27,18 @@ print("Successfully added predicted_pv column to the dataframe.")
 
 
 # Feed into load_model and add predicted_load column to the dataframe
-print("Running load_model...")
+print("Running load_model...")  
 data_with_predicted_load = load_model("prepared_data.csv")
 data_with_predicted_load.to_csv("prepared_data.csv", index=False)
 print("Successfully added predicted_load column to the dataframe.")
 # Feed into usep_model and add predicted_usep column to the dataframe
 
 print("Running usep model...")
+df = pd.read_csv("../data/USEP_all.csv")
+df2 = pd.read_csv("./prepared_data.csv")
+df2["demand"] = df["DEMAND (MW)"]
+# Save the updated dataframe
+df2.to_csv("prepared_data.csv", index=False)
 data_with_predicted_usep = usep_model("prepared_data.csv")
 data_with_predicted_usep.to_csv("prepared_data.csv", index=False)
 print("Successfully added predicted_usep column to the dataframe.")
